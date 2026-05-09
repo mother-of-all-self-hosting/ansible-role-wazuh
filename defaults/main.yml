@@ -548,6 +548,8 @@ wazuh_dashboard_restart_necessary: false
 #                                                                      #
 ########################################################################
 
+wazuh_certs_generator_identifier: "{{ wazuh_identifier }}-certs-generator"
+
 wazuh_certs_generator_container_image_registry_prefix: "{{ wazuh_certs_generator_container_image_registry_prefix_upstream }}"
 wazuh_certs_generator_container_image_registry_prefix_upstream: "{{ wazuh_certs_generator_container_image_registry_prefix_upstream_default }}"
 wazuh_certs_generator_container_image_registry_prefix_upstream_default: docker.io/

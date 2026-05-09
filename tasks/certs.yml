@@ -68,14 +68,14 @@
     - name: Install wazuh-certs-generator systemd service
       ansible.builtin.template:
         src: "{{ role_path }}/templates/systemd/wazuh-certs-generator.service.j2"
-        dest: "{{ devture_systemd_docker_base_systemd_path }}/wazuh-certs-generator.service"
+        dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ wazuh_certs_generator_identifier }}.service"
         owner: root
         group: root
         mode: "0644"
 
     - name: Run wazuh-certs-generator systemd service
       ansible.builtin.systemd:
-        name: wazuh-certs-generator.service
+        name: "{{ wazuh_certs_generator_identifier }}.service"
         state: started
         daemon_reload: true
 

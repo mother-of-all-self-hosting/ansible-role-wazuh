@@ -124,13 +124,13 @@
 - name: Ensure Wazuh manager systemd service is installed
   ansible.builtin.template:
     src: "{{ role_path }}/templates/systemd/wazuh-manager.service.j2"
-    dest: "{{ devture_systemd_docker_base_systemd_path }}/wazuh-manager.service"
+    dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ wazuh_manager_identifier }}.service"
     mode: "0644"
   register: wazuh_manager_systemd_result
 
 - name: Ensure Wazuh manager systemd service is enabled
   ansible.builtin.systemd:
-    name: wazuh-manager.service
+    name: "{{ wazuh_manager_identifier }}.service"
     enabled: true
     daemon_reload: true
 
@@ -146,6 +146,6 @@
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "Note: The Wazuh manager configuration has changed. Restart the `wazuh-manager.service` systemd service to apply changes."
+          "Note: The Wazuh manager configuration has changed. Restart the `{{ wazuh_manager_identifier }}.service` systemd service to apply changes."
         ]
       }}

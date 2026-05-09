@@ -78,13 +78,13 @@
 - name: Ensure Wazuh dashboard systemd service is installed
   ansible.builtin.template:
     src: "{{ role_path }}/templates/systemd/wazuh-dashboard.service.j2"
-    dest: "{{ devture_systemd_docker_base_systemd_path }}/wazuh-dashboard.service"
+    dest: "{{ devture_systemd_docker_base_systemd_path }}/{{ wazuh_dashboard_identifier }}.service"
     mode: "0644"
   register: wazuh_dashboard_systemd_result
 
 - name: Ensure Wazuh dashboard systemd service is enabled
   ansible.builtin.systemd:
-    name: wazuh-dashboard.service
+    name: "{{ wazuh_dashboard_identifier }}.service"
     enabled: true
     daemon_reload: true
 
@@ -107,6 +107,6 @@
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "Note: The Wazuh dashboard configuration has changed. Restart the `wazuh-dashboard.service` systemd service to apply changes."
+          "Note: The Wazuh dashboard configuration has changed. Restart the `{{ wazuh_dashboard_identifier }}.service` systemd service to apply changes."
         ]
       }}
