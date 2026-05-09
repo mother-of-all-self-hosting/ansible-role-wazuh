@@ -1,0 +1,91 @@
+# SPDX-FileCopyrightText: 2023 Gergely Horváth
+# SPDX-FileCopyrightText: 2023 Julian-Samuel Gebühr
+# SPDX-FileCopyrightText: 2023 MASH project contributors
+# SPDX-FileCopyrightText: 2023-2025 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+- name: Fail if wazuh_version is not a valid semver string
+  ansible.builtin.fail:
+    msg: "wazuh_version must be a semver string (e.g. 4.14.1), got: {{ wazuh_version }}"
+  when: "not (wazuh_version is match('^[0-9]+\\.[0-9]+\\.[0-9]+$'))"
+
+- name: Fail if required indexer passwords are not set
+  ansible.builtin.fail:
+    msg: >-
+      You need to define a required configuration setting (`{{ item }}`).
+  when: "lookup('vars', item, default='') | string | length == 0"
+  with_items:
+    - wazuh_indexer_admin_password
+    - wazuh_indexer_kibanaserver_password
+    - wazuh_indexer_admin_password_salt
+    - wazuh_indexer_kibanaserver_password_salt
+
+- name: Fail if required manager API password is not set
+  ansible.builtin.fail:
+    msg: "wazuh_manager_api_password must be set when wazuh_manager_enabled is true"
+  when: "wazuh_manager_enabled | bool and wazuh_manager_api_password | length == 0"
+
+- name: Fail if manager API password does not meet Wazuh complexity requirements
+  ansible.builtin.fail:
+    msg: >-
+      wazuh_manager_api_password must contain at least 8 characters including one uppercase letter,
+      one lowercase letter, one digit, and one special character (Wazuh Error 5007 otherwise).
+  when: >-
+    wazuh_manager_enabled | bool and wazuh_manager_api_password | length > 0 and (
+      wazuh_manager_api_password | length < 8
+      or not (wazuh_manager_api_password is search('[A-Z]'))
+      or not (wazuh_manager_api_password is search('[a-z]'))
+      or not (wazuh_manager_api_password is search('[0-9]'))
+      or not (wazuh_manager_api_password is search('[^A-Za-z0-9]'))
+    )
+
+- name: Fail if manager API password exceeds Wazuh maximum length
+  ansible.builtin.fail:
+    msg: >-
+      wazuh_manager_api_password must not exceed 64 characters (Wazuh Error 5009 otherwise).
+      Current length: {{ wazuh_manager_api_password | length }}.
+  when: "wazuh_manager_enabled | bool and wazuh_manager_api_password | length > 64"
+
+- name: Fail if external indexer URL was not changed when indexer is disabled
+  ansible.builtin.fail:
+    msg: >-
+      wazuh_indexer_enabled is false but wazuh_manager_indexer_url still points at the built-in indexer.
+      Set wazuh_manager_indexer_url to your external indexer URL.
+  when: "not wazuh_indexer_enabled | bool and wazuh_manager_indexer_url == 'https://wazuh.indexer:9200'"
+
+- name: Fail if wazuh_rules items are missing required fields
+  ansible.builtin.fail:
+    msg: "wazuh_rules items must have 'file' and 'contents' fields (item: {{ item }})"
+  when: "item.file is not defined or item.file | length == 0 or item.contents is not defined"
+  with_items: "{{ wazuh_rules }}"
+
+- name: Fail if wazuh_integrations items are missing required fields
+  ansible.builtin.fail:
+    msg: "wazuh_integrations items must have 'name' and 'src' fields (item: {{ item }})"
+  when: "item.name is not defined or item.name | length == 0 or item.src is not defined or item.src | length == 0"
+  with_items: "{{ wazuh_integrations }}"
+
+- name: Run if Traefik is enabled for Wazuh dashboard
+  when: wazuh_dashboard_enabled | bool and wazuh_dashboard_container_labels_traefik_enabled | bool
+  block:
+    - name: Fail if required Traefik settings for Wazuh dashboard are not defined
+      ansible.builtin.fail:
+        msg: >-
+          You need to define a required configuration setting (`{{ item }}`).
+      when: "lookup('vars', item, default='') | string | length == 0"
+      with_items:
+        - wazuh_dashboard_container_labels_traefik_hostname
+        - wazuh_dashboard_container_labels_traefik_docker_network
+
+    - name: Fail if wazuh_dashboard_container_labels_traefik_path_prefix ends with a slash
+      ansible.builtin.fail:
+        msg: >-
+          wazuh_dashboard_container_labels_traefik_path_prefix (`{{ wazuh_dashboard_container_labels_traefik_path_prefix }}`)
+          must either be `/` or not end with a slash (e.g. `/wazuh`).
+      when: >-
+        wazuh_dashboard_container_labels_traefik_path_prefix != '/'
+        and wazuh_dashboard_container_labels_traefik_path_prefix[-1] == '/'

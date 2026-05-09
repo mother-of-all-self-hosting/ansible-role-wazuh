@@ -1,0 +1,44 @@
+# SPDX-FileCopyrightText: 2023 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2026 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+- name: Perform Wazuh installation tasks
+  when: wazuh_enabled | bool
+  tags:
+    - setup-all
+    - setup-wazuh
+    - install-all
+    - install-wazuh
+  block:
+    - name: Validate Wazuh configuration
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/validate_config.yml"
+    - name: Install common Wazuh resources
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/install_common.yml"
+    - name: Generate Wazuh certificates
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/certs.yml"
+    - name: Install Wazuh indexer
+      when: wazuh_indexer_enabled | bool
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/install_indexer.yml"
+    - name: Install Wazuh manager
+      when: wazuh_manager_enabled | bool
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/install_manager.yml"
+    - name: Install Wazuh dashboard
+      when: wazuh_dashboard_enabled | bool
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/install_dashboard.yml"
+    - name: Configure Wazuh agent enrollment and rules
+      when: wazuh_manager_enabled | bool
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/agent_config.yml"
+    - name: Install Wazuh custom integrations
+      when: wazuh_manager_enabled | bool and wazuh_integrations | length > 0
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/integrations.yml"
+
+- name: Perform Wazuh uninstallation tasks
+  when: not wazuh_enabled | bool
+  tags:
+    - setup-all
+    - setup-wazuh
+  block:
+    - name: Uninstall Wazuh
+      ansible.builtin.include_tasks: "{{ role_path }}/tasks/uninstall.yml"

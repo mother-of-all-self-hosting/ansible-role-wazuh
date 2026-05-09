@@ -1,0 +1,661 @@
+# SPDX-FileCopyrightText: 2023 Gergely Horváth
+# SPDX-FileCopyrightText: 2023, 2024 Nikita Chernyi
+# SPDX-FileCopyrightText: 2023-2025 MASH project contributors
+# SPDX-FileCopyrightText: 2023-2026 Slavi Pantaleev
+# SPDX-FileCopyrightText: 2024 Julian-Samuel Gebühr
+# SPDX-FileCopyrightText: 2024 Philipp Homann
+# SPDX-FileCopyrightText: 2024 Sergio Durigan Junior
+# SPDX-FileCopyrightText: 2025, 2026 Suguru Hirahara
+# SPDX-FileCopyrightText: 2026 Timofej Luitle
+# SPDX-FileCopyrightText: 2026 spatterlight
+#
+# SPDX-License-Identifier: AGPL-3.0-or-later
+
+---
+
+# Project source code URL: https://github.com/wazuh/wazuh-docker
+
+wazuh_enabled: true
+
+wazuh_identifier: wazuh
+
+# renovate: datasource=docker depName=wazuh/wazuh-manager
+wazuh_version: "4.14.1"
+
+wazuh_base_path: "/{{ wazuh_identifier }}"
+wazuh_data_path: "{{ wazuh_base_path }}/data"
+wazuh_certs_path: "{{ wazuh_base_path }}/certs"
+
+# UID/GID for indexer and dashboard containers
+# This is non-configurable due to upstream hard coding
+wazuh_uid: 1000
+wazuh_gid: 1000
+
+# UID/GID for the manager container
+# This is non-configurable due to upstream hard coding
+wazuh_manager_uid: 999
+wazuh_manager_gid: 999
+
+# The hostname at which Wazuh is served.
+wazuh_hostname: ""
+
+# The path at which Wazuh is served
+# This value must either be `/` or not end with a slash (e.g. `/wazuh`).
+wazuh_path_prefix: /
+
+# The base container network. It will be auto-created by this role if it doesn't exist already.
+wazuh_container_network: "{{ wazuh_identifier }}"
+
+########################################################################
+#                                                                      #
+# manager                                                              #
+#                                                                      #
+########################################################################
+
+wazuh_manager_enabled: "{{ wazuh_enabled }}"
+
+wazuh_manager_identifier: "{{ wazuh_identifier }}-manager"
+
+wazuh_manager_container_image_registry_prefix: "{{ wazuh_manager_container_image_registry_prefix_upstream }}"
+wazuh_manager_container_image_registry_prefix_upstream: "{{ wazuh_manager_container_image_registry_prefix_upstream_default }}"
+wazuh_manager_container_image_registry_prefix_upstream_default: docker.io/
+wazuh_manager_container_image: "{{ wazuh_manager_container_image_registry_prefix }}wazuh/wazuh-manager:{{ wazuh_manager_container_image_tag }}"
+wazuh_manager_container_image_tag: "{{ wazuh_version }}"
+wazuh_manager_container_image_force_pull: "{{ wazuh_manager_container_image.endswith(':latest') }}"
+
+# Specify how the container publishes its agent enrollment port (as defined by `wazuh_manager_agent_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:1514"), or empty string to not expose.
+wazuh_manager_agent_host_bind_port: ""
+
+# The port number in the container
+wazuh_manager_agent_port: 1514
+
+# Specify how the container publishes its agent registration port (as defined by `wazuh_manager_authd_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:1515"), or empty string to not expose.
+wazuh_manager_authd_host_bind_port: ""
+
+# The port number in the container
+wazuh_manager_authd_port: 1515
+
+# Specify how the container publishes its syslog port (as defined by `wazuh_manager_syslog_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:514"), or empty string to not expose.
+wazuh_manager_syslog_host_bind_port: ""
+
+wazuh_manager_syslog_port: 514
+
+# Specify how the container publishes its REST API port (as defined by `wazuh_manager_api_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:55000"), or empty string to not expose.
+wazuh_manager_api_host_bind_port: ""
+
+# The port number in the container
+wazuh_manager_api_port: 55000
+
+# The manager container does not currently support non-root user operation
+wazuh_manager_container_uid: ""
+wazuh_manager_container_gid: ""
+
+# The manager container does not currently support being run with all capabilities dropped
+# NOTE: There is probably some combination of minimal added capabilities that works,
+# but I was un-able to discover it after a few tries
+wazuh_manager_container_cap_drop_all: false
+
+# The manager container does not currently support being run in read-only operation
+wazuh_manager_container_read_only: false
+
+wazuh_manager_container_memory_limit: ""
+wazuh_manager_container_memory_swap_limit: ""
+
+# Indexer connection (used in env-file and wazuh_manager.conf XPath replacements)
+wazuh_manager_indexer_url: "https://wazuh.indexer:9200"
+wazuh_manager_indexer_username: "admin"
+wazuh_manager_indexer_password: "{{ wazuh_indexer_admin_password }}"
+
+# Manager API credentials
+wazuh_manager_api_username: "wazuh-wui"
+wazuh_manager_api_password: ""
+
+wazuh_manager_container_health_cmd: "curl -k -s -o /dev/null https://localhost:{{ wazuh_manager_api_port }} || exit 1"
+wazuh_manager_container_health_interval: "15s"
+wazuh_manager_container_health_timeout: "5s"
+wazuh_manager_container_health_retries: 5
+
+wazuh_manager_filebeat_ssl_verification_mode: "full"
+
+# wazuh_manager_ossec_xml_replacements_custom contains a list of dictionaries of XPath expressions
+# This can be used to add, modify, or remove any property from the default 'wazuh_manager.conf' file
+#
+# See `wazuh_manager_ossec_xml_replacements_default` for an example of what can be defined here
+wazuh_manager_ossec_xml_replacements_custom: []
+
+# The default 'wazuh_manager.conf` replacements to make
+wazuh_manager_ossec_xml_replacements_default:
+  - xpath: "/ossec_config/indexer/hosts/host"
+    value: "{{ wazuh_manager_indexer_url }}"
+
+  - xpath: "/ossec_config/auth/use_password"
+    value: "{{ 'yes' if wazuh_enrollment_password | length > 0 else 'no' }}"
+
+wazuh_manager_ossec_xml_replacements: "{{ wazuh_manager_ossec_xml_replacements_default + wazuh_manager_ossec_xml_replacements_custom }}"
+
+# List of systemd services that the manager systemd service depends on
+wazuh_manager_systemd_required_services_list: "{{ wazuh_manager_systemd_required_services_list_default + wazuh_manager_systemd_required_services_list_auto + wazuh_manager_systemd_required_services_list_custom }}"
+wazuh_manager_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+wazuh_manager_systemd_required_services_list_auto: []
+wazuh_manager_systemd_required_services_list_custom: []
+
+# List of systemd services that the manager systemd service wants
+wazuh_manager_systemd_wanted_services_list: "{{ wazuh_manager_systemd_wanted_services_list_default + wazuh_manager_systemd_wanted_services_list_auto + wazuh_manager_systemd_wanted_services_list_custom }}"
+wazuh_manager_systemd_wanted_services_list_default: []
+wazuh_manager_systemd_wanted_services_list_auto: []
+wazuh_manager_systemd_wanted_services_list_custom: []
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+# Use this to expose this container to another reverse proxy, which runs in a different container network.
+wazuh_manager_container_additional_networks: "{{ wazuh_manager_container_additional_networks_auto + wazuh_manager_container_additional_networks_custom }}"
+wazuh_manager_container_additional_networks_auto: []
+wazuh_manager_container_additional_networks_custom: []
+
+# A list of additional "volumes" to mount in the container.
+# This list gets populated dynamically at runtime. You can provide a different default value,
+# if you wish to mount your own files into the container.
+# Contains definition objects like this: `{"type": "bind", "src": "/outside", "dst": "/inside", "options": "readonly"}.
+# See the `--mount` documentation for the `docker run` command.
+wazuh_manager_container_additional_volumes: "{{ wazuh_manager_container_additional_volumes_auto + wazuh_manager_container_additional_volumes_custom }}"
+wazuh_manager_container_additional_volumes_auto: []
+wazuh_manager_container_additional_volumes_custom: []
+
+wazuh_manager_container_extra_arguments: []
+
+wazuh_manager_container_stop_grace_time_seconds: "{{ devture_systemd_docker_base_container_stop_grace_time_seconds }}"
+wazuh_manager_container_cleanup_timeout_seconds: "{{ devture_systemd_docker_base_container_cleanup_timeout_seconds }}"
+wazuh_manager_container_cleanup_retry_delay_seconds: "{{ devture_systemd_docker_base_container_cleanup_retry_delay_seconds }}"
+
+wazuh_manager_restart_necessary: false
+
+########################################################################
+#                                                                      #
+# /manager                                                             #
+#                                                                      #
+########################################################################
+
+########################################################################
+#                                                                      #
+# indexer                                                              #
+#                                                                      #
+########################################################################
+
+wazuh_indexer_enabled: "{{ wazuh_enabled }}"
+
+wazuh_indexer_identifier: "{{ wazuh_identifier }}-indexer"
+
+wazuh_indexer_container_image_registry_prefix: "{{ wazuh_indexer_container_image_registry_prefix_upstream }}"
+wazuh_indexer_container_image_registry_prefix_upstream: "{{ wazuh_indexer_container_image_registry_prefix_upstream_default }}"
+wazuh_indexer_container_image_registry_prefix_upstream_default: docker.io/
+wazuh_indexer_container_image: "{{ wazuh_indexer_container_image_registry_prefix }}wazuh/wazuh-indexer:{{ wazuh_indexer_container_image_tag }}"
+wazuh_indexer_container_image_tag: "{{ wazuh_version }}"
+wazuh_indexer_container_image_force_pull: "{{ wazuh_indexer_container_image.endswith(':latest') }}"
+
+wazuh_indexer_opensearch_java_opts: "-Xms1g -Xmx1g"
+
+wazuh_indexer_admin_password: ""
+wazuh_indexer_kibanaserver_password: ""
+
+wazuh_indexer_admin_password_salt: ""
+wazuh_indexer_kibanaserver_password_salt: ""
+
+# Controls whether the indexer container exposes its ports.
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:2586"), or empty string to not expose.
+wazuh_indexer_http_host_bind_port: ""
+wazuh_indexer_transport_host_bind_port: ""
+
+wazuh_indexer_container_uid: "{{ wazuh_uid }}"
+wazuh_indexer_container_gid: "{{ wazuh_gid }}"
+
+wazuh_indexer_container_cap_drop_all: true
+
+# The indexer container does not currently support being run in read-only operation
+wazuh_indexer_container_read_only: false
+
+wazuh_indexer_container_memory_limit: ""
+wazuh_indexer_container_memory_swap_limit: ""
+
+wazuh_indexer_container_health_cmd: curl -fks https://localhost:9200/_plugins/_security/health | grep -q '\"status\":\"UP\"'
+wazuh_indexer_container_health_interval: "30s"
+wazuh_indexer_container_health_timeout: "10s"
+wazuh_indexer_container_health_retries: 5
+wazuh_indexer_container_health_start_period: "60s"
+
+# Default Wazuh indexer OpenSearch configuration template which covers the generic use case.
+# You can customize it by controlling the various variables inside it.
+#
+# For a more advanced customization, you can extend the default (see `wazuh_indexer_opensearch_yml_extension_yaml`)
+# or completely replace this variable with your own template.
+wazuh_indexer_opensearch_yml_yaml: "{{ lookup('template', role_path + '/templates/indexer/wazuh.indexer.yml.j2') }}"
+
+wazuh_indexer_opensearch_yml_extension_yaml: |
+  # Your custom YAML configuration for the Wazuh indexer goes here.
+  # This configuration extends the default starting configuration (`wazuh_indexer_opensearch_yml_yaml`).
+  #
+  # You can override individual variables from the default configuration, or introduce new ones.
+  #
+  # If you need something more special, you can take full control by
+  # completely redefining `wazuh_indexer_opensearch_yml_yaml`.
+  #
+  # Example configuration extension follows:
+  #
+  # plugins.security.audit.type: internal_opensearch
+
+wazuh_indexer_opensearch_yml_extension: "{{ wazuh_indexer_opensearch_yml_extension_yaml | from_yaml if wazuh_indexer_opensearch_yml_extension_yaml | from_yaml is mapping else {} }}"
+
+# Holds the final Wazuh indexer OpenSearch configuration (a combination of the default and its extension).
+# You most likely don't need to touch this variable. Instead, see `wazuh_indexer_opensearch_yml_yaml`.
+wazuh_indexer_opensearch_yml: "{{ wazuh_indexer_opensearch_yml_yaml | from_yaml | combine(wazuh_indexer_opensearch_yml_extension, recursive=True) }}"
+
+# Default Wazuh indexer internal users configuration template which covers the generic use case.
+# You can customize it by controlling the various variables inside it.
+#
+# For a more advanced customization, you can extend the default (see `wazuh_indexer_internal_users_yml_extension_yaml`)
+# or completely replace this variable with your own template.
+wazuh_indexer_internal_users_yml_yaml: "{{ lookup('template', role_path + '/templates/indexer/internal_users.yml.j2') }}"
+
+wazuh_indexer_internal_users_yml_extension_yaml: |
+  # Your custom YAML configuration for the Wazuh indexer internal users goes here.
+  # This configuration extends the default starting configuration (`wazuh_indexer_internal_users_yml_yaml`).
+  #
+  # You can override individual variables from the default configuration, or introduce new ones.
+  #
+  # If you need something more special, you can take full control by
+  # completely redefining `wazuh_indexer_internal_users_yml_yaml`.
+  #
+  # Example configuration extension follows:
+  #
+  # logstash:
+  #   hash: "$2y$12$..."
+  #   reserved: false
+
+wazuh_indexer_internal_users_yml_extension: "{{ wazuh_indexer_internal_users_yml_extension_yaml | from_yaml if wazuh_indexer_internal_users_yml_extension_yaml | from_yaml is mapping else {} }}"
+
+# Holds the final Wazuh indexer internal users configuration (a combination of the default and its extension).
+# You most likely don't need to touch this variable. Instead, see `wazuh_indexer_internal_users_yml_yaml`.
+wazuh_indexer_internal_users_yml: "{{ wazuh_indexer_internal_users_yml_yaml | from_yaml | combine(wazuh_indexer_internal_users_yml_extension, recursive=True) }}"
+
+# List of systemd services that the indexer systemd service depends on
+wazuh_indexer_systemd_required_services_list: "{{ wazuh_indexer_systemd_required_services_list_default + wazuh_indexer_systemd_required_services_list_auto + wazuh_indexer_systemd_required_services_list_custom }}"
+wazuh_indexer_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+wazuh_indexer_systemd_required_services_list_auto: []
+wazuh_indexer_systemd_required_services_list_custom: []
+
+# List of systemd services that the indexer systemd service wants
+wazuh_indexer_systemd_wanted_services_list: "{{ wazuh_indexer_systemd_wanted_services_list_default + wazuh_indexer_systemd_wanted_services_list_auto + wazuh_indexer_systemd_wanted_services_list_custom }}"
+wazuh_indexer_systemd_wanted_services_list_default: []
+wazuh_indexer_systemd_wanted_services_list_auto: []
+wazuh_indexer_systemd_wanted_services_list_custom: []
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+# Use this to expose this container to another reverse proxy, which runs in a different container network.
+wazuh_indexer_container_additional_networks: "{{ wazuh_indexer_container_additional_networks_auto + wazuh_indexer_container_additional_networks_custom }}"
+wazuh_indexer_container_additional_networks_auto: []
+wazuh_indexer_container_additional_networks_custom: []
+
+# A list of additional "volumes" to mount in the container.
+# This list gets populated dynamically at runtime. You can provide a different default value,
+# if you wish to mount your own files into the container.
+# Contains definition objects like this: `{"type": "bind", "src": "/outside", "dst": "/inside", "options": "readonly"}.
+# See the `--mount` documentation for the `docker run` command.
+wazuh_indexer_container_additional_volumes: "{{ wazuh_indexer_container_additional_volumes_auto + wazuh_indexer_container_additional_volumes_custom }}"
+wazuh_indexer_container_additional_volumes_auto: []
+wazuh_indexer_container_additional_volumes_custom: []
+
+wazuh_indexer_container_extra_arguments: []
+
+wazuh_indexer_container_stop_grace_time_seconds: "{{ devture_systemd_docker_base_container_stop_grace_time_seconds }}"
+wazuh_indexer_container_cleanup_timeout_seconds: "{{ devture_systemd_docker_base_container_cleanup_timeout_seconds }}"
+wazuh_indexer_container_cleanup_retry_delay_seconds: "{{ devture_systemd_docker_base_container_cleanup_retry_delay_seconds }}"
+
+wazuh_indexer_restart_necessary: false
+
+########################################################################
+#                                                                      #
+# /indexer                                                             #
+#                                                                      #
+########################################################################
+
+########################################################################
+#                                                                      #
+# dashboard                                                            #
+#                                                                      #
+########################################################################
+
+wazuh_dashboard_enabled: "{{ wazuh_enabled }}"
+
+wazuh_dashboard_identifier: "{{ wazuh_identifier }}-dashboard"
+
+wazuh_dashboard_container_image_registry_prefix: "{{ wazuh_dashboard_container_image_registry_prefix_upstream }}"
+wazuh_dashboard_container_image_registry_prefix_upstream: "{{ wazuh_dashboard_container_image_registry_prefix_upstream_default }}"
+wazuh_dashboard_container_image_registry_prefix_upstream_default: docker.io/
+wazuh_dashboard_container_image: "{{ wazuh_dashboard_container_image_registry_prefix }}wazuh/wazuh-dashboard:{{ wazuh_dashboard_container_image_tag }}"
+wazuh_dashboard_container_image_tag: "{{ wazuh_version }}"
+wazuh_dashboard_container_image_force_pull: "{{ wazuh_dashboard_container_image.endswith(':latest') }}"
+
+# Specify how the container publishes its dashboard http port (as defined by `wazuh_dashboard_http_port`).
+#
+# Takes an "<ip>:<port>" or "<port>" value (e.g. "127.0.0.1:80"), or empty string to not expose.
+wazuh_dashboard_http_host_bind_port: ""
+
+# The port number in the container
+wazuh_dashboard_http_port: 5601
+
+wazuh_dashboard_container_uid: "{{ wazuh_uid }}"
+wazuh_dashboard_container_gid: "{{ wazuh_gid }}"
+
+wazuh_dashboard_container_cap_drop_all: true
+
+# The dashboard container does not currently support being run in read-only operation
+wazuh_dashboard_container_read_only: false
+
+wazuh_dashboard_container_memory_limit: ""
+wazuh_dashboard_container_memory_swap_limit: ""
+
+# Credentials
+wazuh_dashboard_indexer_username: "admin"
+wazuh_dashboard_indexer_password: "{{ wazuh_indexer_admin_password }}"
+wazuh_dashboard_kibanaserver_username: "kibanaserver"
+wazuh_dashboard_kibanaserver_password: "{{ wazuh_indexer_kibanaserver_password }}"
+wazuh_dashboard_api_username: "{{ wazuh_manager_api_username }}"
+wazuh_dashboard_api_password: "{{ wazuh_manager_api_password }}"
+wazuh_dashboard_api_url: "https://wazuh.manager"
+
+wazuh_dashboard_container_health_cmd: "curl -k -s -o /dev/null http://localhost:{{ wazuh_dashboard_http_port }}/login"
+wazuh_dashboard_container_health_interval: "30s"
+wazuh_dashboard_container_health_timeout: "10s"
+wazuh_dashboard_container_health_retries: 3
+wazuh_dashboard_container_health_start_period: "30s"
+
+# Default Wazuh dashboard OpenSearch Dashboards configuration template which covers the generic use case.
+# You can customize it by controlling the various variables inside it.
+#
+# For a more advanced customization, you can extend the default (see `wazuh_dashboard_opensearch_dashboards_yml_extension_yaml`)
+# or completely replace this variable with your own template.
+wazuh_dashboard_opensearch_dashboards_yml_yaml: "{{ lookup('template', role_path + '/templates/dashboard/opensearch_dashboards.yml.j2') }}"
+
+wazuh_dashboard_opensearch_dashboards_yml_extension_yaml: |
+  # Your custom YAML configuration for the Wazuh dashboard OpenSearch Dashboards goes here.
+  # This configuration extends the default starting configuration (`wazuh_dashboard_opensearch_dashboards_yml_yaml`).
+  #
+  # You can override individual variables from the default configuration, or introduce new ones.
+  #
+  # If you need something more special, you can take full control by
+  # completely redefining `wazuh_dashboard_opensearch_dashboards_yml_yaml`.
+  #
+  # Example configuration extension follows:
+  #
+  # server.requestTimeout: 120000
+
+wazuh_dashboard_opensearch_dashboards_yml_extension: "{{ wazuh_dashboard_opensearch_dashboards_yml_extension_yaml | from_yaml if wazuh_dashboard_opensearch_dashboards_yml_extension_yaml | from_yaml is mapping else {} }}"
+
+# Holds the final Wazuh dashboard OpenSearch Dashboards configuration (a combination of the default and its extension).
+# You most likely don't need to touch this variable. Instead, see `wazuh_dashboard_opensearch_dashboards_yml_yaml`.
+wazuh_dashboard_opensearch_dashboards_yml: "{{ wazuh_dashboard_opensearch_dashboards_yml_yaml | from_yaml | combine(wazuh_dashboard_opensearch_dashboards_yml_extension, recursive=True) }}"
+
+# Default Wazuh dashboard application configuration template which covers the generic use case.
+# You can customize it by controlling the various variables inside it.
+#
+# For a more advanced customization, you can extend the default (see `wazuh_dashboard_wazuh_yml_extension_yaml`)
+# or completely replace this variable with your own template.
+wazuh_dashboard_wazuh_yml_yaml: "{{ lookup('template', role_path + '/templates/dashboard/wazuh.yml.j2') }}"
+
+wazuh_dashboard_wazuh_yml_extension_yaml: |
+  # Your custom YAML configuration for the Wazuh dashboard application goes here.
+  # This configuration extends the default starting configuration (`wazuh_dashboard_wazuh_yml_yaml`).
+  #
+  # You can override individual variables from the default configuration, or introduce new ones.
+  #
+  # If you need something more special, you can take full control by
+  # completely redefining `wazuh_dashboard_wazuh_yml_yaml`.
+  #
+  # Example configuration extension follows:
+  #
+  # pattern: wazuh-alerts-*
+
+wazuh_dashboard_wazuh_yml_extension: "{{ wazuh_dashboard_wazuh_yml_extension_yaml | from_yaml if wazuh_dashboard_wazuh_yml_extension_yaml | from_yaml is mapping else {} }}"
+
+# Holds the final Wazuh dashboard application configuration (a combination of the default and its extension).
+# You most likely don't need to touch this variable. Instead, see `wazuh_dashboard_wazuh_yml_yaml`.
+wazuh_dashboard_wazuh_yml: "{{ wazuh_dashboard_wazuh_yml_yaml | from_yaml | combine(wazuh_dashboard_wazuh_yml_extension, recursive=True) }}"
+
+# wazuh_dashboard_container_labels_traefik_enabled controls whether labels to assist a Traefik reverse-proxy will be attached to the container.
+# See `../templates/dashboard/labels.j2` for details.
+#
+# To inject your own other container labels, see `wazuh_dashboard_container_labels_additional_labels_custom`.
+wazuh_dashboard_container_labels_traefik_enabled: true
+wazuh_dashboard_container_labels_traefik_docker_network: ""
+wazuh_dashboard_container_labels_traefik_hostname: "{{ wazuh_hostname }}"
+# The path prefix must either be `/` or not end with a slash (e.g. `/wazuh`).
+wazuh_dashboard_container_labels_traefik_path_prefix: "{{ wazuh_path_prefix }}"
+wazuh_dashboard_container_labels_traefik_rule: "Host(`{{ wazuh_dashboard_container_labels_traefik_hostname }}`){% if wazuh_dashboard_container_labels_traefik_path_prefix != '/' %} && PathPrefix(`{{ wazuh_dashboard_container_labels_traefik_path_prefix }}`){% endif %}"
+wazuh_dashboard_container_labels_traefik_priority: 0
+wazuh_dashboard_container_labels_traefik_entrypoints: web-secure
+wazuh_dashboard_container_labels_traefik_tls: "{{ wazuh_dashboard_container_labels_traefik_entrypoints != 'web' }}"
+wazuh_dashboard_container_labels_traefik_tls_certResolver: default # noqa var-naming
+
+# Controls which additional headers to attach to all HTTP requests.
+# To add your own custom request headers, use `wazuh_dashboard_container_labels_traefik_additional_request_headers_custom`
+wazuh_dashboard_container_labels_traefik_additional_request_headers: "{{ wazuh_dashboard_container_labels_traefik_additional_request_headers_auto | combine(wazuh_dashboard_container_labels_traefik_additional_request_headers_custom) }}"
+wazuh_dashboard_container_labels_traefik_additional_request_headers_auto: {}
+wazuh_dashboard_container_labels_traefik_additional_request_headers_custom: {}
+
+# Default safe security headers. Override individual values via wazuh_http_header_* variables.
+# CSP is intentionally omitted — Wazuh Dashboard's SPA may require tuning before adding one.
+wazuh_http_header_x_xss_protection: "1; mode=block"
+wazuh_http_header_x_content_type_options: nosniff
+wazuh_http_header_x_frame_options: SAMEORIGIN
+wazuh_http_header_strict_transport_security: "max-age=31536000; includeSubDomains"
+
+# Controls which additional headers to attach to all HTTP responses.
+# To add your own custom response headers, use `wazuh_dashboard_container_labels_traefik_additional_response_headers_custom`
+wazuh_dashboard_container_labels_traefik_additional_response_headers: "{{ wazuh_dashboard_container_labels_traefik_additional_response_headers_auto | combine(wazuh_dashboard_container_labels_traefik_additional_response_headers_custom) }}"
+wazuh_dashboard_container_labels_traefik_additional_response_headers_auto: |
+  {{
+    {}
+    | combine({'X-XSS-Protection': wazuh_http_header_x_xss_protection} if wazuh_http_header_x_xss_protection else {})
+    | combine({'X-Content-Type-Options': wazuh_http_header_x_content_type_options} if wazuh_http_header_x_content_type_options else {})
+    | combine({'X-Frame-Options': wazuh_http_header_x_frame_options} if wazuh_http_header_x_frame_options else {})
+    | combine({'Strict-Transport-Security': wazuh_http_header_strict_transport_security} if wazuh_http_header_strict_transport_security and wazuh_dashboard_container_labels_traefik_tls else {})
+  }}
+wazuh_dashboard_container_labels_traefik_additional_response_headers_custom: {}
+
+# wazuh_dashboard_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
+# See `../templates/labels.j2` for details.
+# To add your own custom labels, use `wazuh_dashboard_container_labels_additional_labels_custom`
+#
+# Example:
+# wazuh_dashboard_container_labels_additional_labels_custom:
+#   - my.label=1
+#   - another.label="here"
+wazuh_dashboard_container_labels_additional_labels: "{{ wazuh_dashboard_container_labels_additional_labels_auto + wazuh_dashboard_container_labels_additional_labels_custom }}"
+wazuh_dashboard_container_labels_additional_labels_auto: []
+wazuh_dashboard_container_labels_additional_labels_custom: []
+
+# List of systemd services that the Wazuh dashboard systemd service depends on
+wazuh_dashboard_systemd_required_services_list: "{{ wazuh_dashboard_systemd_required_services_list_default + wazuh_dashboard_systemd_required_services_list_auto + wazuh_dashboard_systemd_required_services_list_custom }}"
+wazuh_dashboard_systemd_required_services_list_default: "{{ [devture_systemd_docker_base_docker_service_name] if devture_systemd_docker_base_docker_service_name else [] }}"
+wazuh_dashboard_systemd_required_services_list_auto: []
+wazuh_dashboard_systemd_required_services_list_custom: []
+
+# List of systemd services that the Wazuh dashboard systemd service wants
+wazuh_dashboard_systemd_wanted_services_list: "{{ wazuh_dashboard_systemd_wanted_services_list_default + wazuh_dashboard_systemd_wanted_services_list_auto + wazuh_dashboard_systemd_wanted_services_list_custom }}"
+wazuh_dashboard_systemd_wanted_services_list_default: []
+wazuh_dashboard_systemd_wanted_services_list_auto: []
+wazuh_dashboard_systemd_wanted_services_list_custom: []
+
+# A list of additional container networks that the container would be connected to.
+# The role does not create these networks, so make sure they already exist.
+# Use this to expose this container to another reverse proxy, which runs in a different container network.
+wazuh_dashboard_container_additional_networks: "{{ wazuh_dashboard_container_additional_networks_auto + wazuh_dashboard_container_additional_networks_custom }}"
+wazuh_dashboard_container_additional_networks_auto: []
+wazuh_dashboard_container_additional_networks_custom: []
+
+# A list of additional "volumes" to mount in the container.
+# This list gets populated dynamically at runtime. You can provide a different default value,
+# if you wish to mount your own files into the container.
+# Contains definition objects like this: `{"type": "bind", "src": "/outside", "dst": "/inside", "options": "readonly"}.
+# See the `--mount` documentation for the `docker run` command.
+wazuh_dashboard_container_additional_volumes: "{{ wazuh_dashboard_container_additional_volumes_auto + wazuh_dashboard_container_additional_volumes_custom }}"
+wazuh_dashboard_container_additional_volumes_auto: []
+wazuh_dashboard_container_additional_volumes_custom: []
+
+# A list of extra arguments to pass to the container (`docker create` command)
+wazuh_dashboard_container_extra_arguments: "{{ wazuh_dashboard_container_extra_arguments_auto + wazuh_dashboard_container_extra_arguments_custom }}"
+wazuh_dashboard_container_extra_arguments_auto: []
+wazuh_dashboard_container_extra_arguments_custom: []
+
+# Controls how long to wait for the container to stop gracefully before killing it.
+wazuh_dashboard_container_stop_grace_time_seconds: "{{ devture_systemd_docker_base_container_stop_grace_time_seconds }}"
+
+# Controls how long the pre-start cleanup should wait for stale container-name release
+# before failing startup explicitly.
+wazuh_dashboard_container_cleanup_timeout_seconds: "{{ devture_systemd_docker_base_container_cleanup_timeout_seconds }}"
+
+# Controls the delay between pre-start cleanup retries.
+wazuh_dashboard_container_cleanup_retry_delay_seconds: "{{ devture_systemd_docker_base_container_cleanup_retry_delay_seconds }}"
+
+# wazuh_dashboard_restart_necessary controls whether the Wazuh dashboard systemd
+# service will be restarted (when true) or merely started (when false) by the
+# systemd service manager role (when conditional restart is enabled).
+#
+# This value is automatically computed during installation based on whether
+# any configuration files, the systemd service file, or the container image changed.
+# The default of `false` means "no restart needed" — appropriate when the role's
+# installation tasks haven't run (e.g., due to --tags skipping them).
+wazuh_dashboard_restart_necessary: false
+
+########################################################################
+#                                                                      #
+# /dashboard                                                           #
+#                                                                      #
+########################################################################
+
+########################################################################
+#                                                                      #
+# certs                                                                #
+#                                                                      #
+########################################################################
+
+wazuh_certs_generator_container_image_registry_prefix: "{{ wazuh_certs_generator_container_image_registry_prefix_upstream }}"
+wazuh_certs_generator_container_image_registry_prefix_upstream: "{{ wazuh_certs_generator_container_image_registry_prefix_upstream_default }}"
+wazuh_certs_generator_container_image_registry_prefix_upstream_default: docker.io/
+wazuh_certs_generator_container_image: "{{ wazuh_certs_generator_container_image_registry_prefix }}wazuh/wazuh-certs-generator:{{ wazuh_certs_generator_container_image_tag }}"
+# renovate: datasource=docker depName=wazuh/wazuh-certs-generator versioning=semver
+wazuh_certs_generator_container_image_tag: "0.0.3"
+wazuh_certs_generator_container_image_force_pull: false
+
+# Default Wazuh certificate generation configuration template which covers the generic use case.
+# You can customize it by controlling the various variables inside it.
+#
+# For a more advanced customization, you can extend the default (see `wazuh_certs_yml_extension_yaml`)
+# or completely replace this variable with your own template.
+wazuh_certs_yml_yaml: "{{ lookup('template', role_path + '/templates/certs/certs.yml.j2') }}"
+
+wazuh_certs_yml_extension_yaml: |
+  # Your custom YAML configuration for Wazuh certificate generation goes here.
+  # This configuration extends the default starting configuration (`wazuh_certs_yml_yaml`).
+  #
+  # You can override individual variables from the default configuration, or introduce new ones.
+  #
+  # If you need something more special, you can take full control by
+  # completely redefining `wazuh_certs_yml_yaml`.
+  #
+  # Example configuration extension follows:
+  #
+  # nodes:
+  #   indexer:
+  #     - name: wazuh.indexer
+  #       ip: 10.0.0.5
+
+wazuh_certs_yml_extension: "{{ wazuh_certs_yml_extension_yaml | from_yaml if wazuh_certs_yml_extension_yaml | from_yaml is mapping else {} }}"
+
+# Holds the final Wazuh certificate generation configuration (a combination of the default and its extension).
+# You most likely don't need to touch this variable. Instead, see `wazuh_certs_yml_yaml`.
+wazuh_certs_yml: "{{ wazuh_certs_yml_yaml | from_yaml | combine(wazuh_certs_yml_extension, recursive=True) }}"
+
+########################################################################
+#                                                                      #
+# /certs                                                               #
+#                                                                      #
+########################################################################
+
+########################################################################
+#                                                                      #
+# agent enrollment & rules                                             #
+#                                                                      #
+########################################################################
+
+# Set to a non-empty string to enable password-based agent enrollment.
+wazuh_enrollment_password: ""
+
+# What contents the agent.conf file should have, a mechanism to configure agents remotely
+#
+# Example:
+# wazuh_agent_conf: |
+#   <agent_config name="92603de31548">
+#     <labels>
+#       <label key="aws.instance-id">i-052a1838c</label>
+#       <label key="aws.sec-group">sg-1103</label>
+#       <label key="network.ip">172.17.0.0</label>
+#       <label key="network.mac">02:42:ac:11:00:02</label>
+#       <label key="installation" hidden="yes">July 1st, 2024</label>
+#     </labels>
+#   </agent_config>
+wazuh_agent_conf: ""
+
+# List of custom rules to deploy to the manager. Each item must have a `file` name and `contents`.
+#
+# Example:
+# wazuh_rules:
+#   - file: local_rules.xml
+#     contents: |
+#       <group name="local,">
+#         <rule id="100001" level="3">
+#           <description>Custom rule example</description>
+#         </rule>
+#       </group>
+wazuh_rules: []
+
+########################################################################
+#                                                                      #
+# /agent enrollment & rules                                            #
+#                                                                      #
+########################################################################
+
+########################################################################
+#                                                                      #
+# integrations                                                         #
+#                                                                      #
+########################################################################
+
+# List of custom integrations to deploy to the manager's integrations directory.
+# Each item must have a `name` (destination filename) and `src` (path to the file on the controller).
+# `mode` is optional and defaults to "0750".
+#
+# Example:
+# wazuh_integrations:
+#   - name: custom-element
+#     src: "{{ role_path }}/files/integrations/element/custom-element"
+#     mode: "0750"
+#   - name: custom-element.py
+#     src: "{{ role_path }}/files/integrations/element/custom-element.py"
+#     mode: "0750"
+wazuh_integrations: []
+
+########################################################################
+#                                                                      #
+# /integrations                                                        #
+#                                                                      #
+########################################################################
