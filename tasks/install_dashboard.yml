@@ -107,6 +107,6 @@
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "Note: The Wazuh dashboard configuration has changed. Restart the `{{ wazuh_dashboard_identifier }}.service` systemd service to apply changes."
+          "Note: The Wazuh dashboard configuration has changed. Restart the `" ~ wazuh_dashboard_identifier ~ ".service` systemd service to apply changes."
         ]
       }}
