@@ -101,7 +101,7 @@ wazuh_manager_agent_host_bind_port: 1514
 # Used by the agent to stream events to the manager, you'll probably want to set this
 wazuh_manager_authd_host_bind_port: 1515
 
-# Syslog input (optional), you probably don't need this
+# Syslog input, you probably don't need this
 wazuh_manager_syslog_host_bind_port: 514
 
 # Access to the Wazuh manager REST API, you probably don't need this
