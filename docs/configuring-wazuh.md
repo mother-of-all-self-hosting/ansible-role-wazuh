@@ -61,7 +61,7 @@ wazuh_indexer_kibanaserver_password: ""
 wazuh_manager_api_password: ""
 
 # Salt's used to hash the above passwords idempotently. Must be exactly 22 characters.
-# Generate one using `pwgen -s 22 1`, or some other way
+# Generate one using `pwgen -s 22 2`, or some other way
 wazuh_indexer_admin_password_salt: ""
 wazuh_indexer_kibanaserver_password_salt: ""
 
@@ -90,6 +90,26 @@ To get started, open the URL with a web browser to log in to the dashboard.
 
 To log in to the dashboard use the `admin` username and your `wazuh_indexer_admin_password` configured credential.
 
+### Exposing ports
+
+By default no ports are exposed, but you'll most likely want to adjust this. The below defines what these ports are and why you may want to expose them:
+
+```yaml
+# Used by the agent for initial enrollment, you'll probably want to set this
+wazuh_manager_agent_host_bind_port: 1514
+
+# Used by the agent to stream events to the manager, you'll probably want to set this
+wazuh_manager_authd_host_bind_port: 1515
+
+# Syslog input (optional), you probably don't need this
+wazuh_manager_syslog_host_bind_port: 514
+
+# Access to the Wazuh manager REST API, you probably don't need this
+wazuh_manager_api_host_bind_port: 55000
+```
+
+See the [upstream documentation](https://documentation.wazuh.com/current/getting-started/architecture.html#required-ports) for the full list of Wazuh ports and their purposes.
+
 ## External indexer mode
 
 To use an external OpenSearch/Wazuh indexer instead of the bundled one:
@@ -103,7 +123,7 @@ wazuh_manager_indexer_password: "external-password"
 
 ## Agent enrollment
 
-By default agents enroll without a password. To require a password:
+By default agents can enroll without a password. To require a password:
 
 ```yaml
 wazuh_enrollment_password: "your-enrollment-password"
@@ -175,6 +195,35 @@ wazuh_manager_ossec_xml_replacements_custom:
   - xpath: "/ossec_config/global/email_to"
     value: "alerts@example.com"
 ```
+
+## Deploying agents via wazuh-ansible
+
+The [wazuh/wazuh-ansible](https://github.com/wazuh/wazuh-ansible) repository provides an official Ansible role for installing the Wazuh agent on managed hosts. It is best used as a git submodule checked out to the same version tag as your Wazuh server.
+
+Add the submodule to your playbook repository:
+
+```sh
+git submodule add https://github.com/wazuh/wazuh-ansible.git submodules/wazuh-ansible
+git -C submodules/wazuh-ansible checkout v<your-wazuh-version>
+```
+
+Then extend your `ansible.cfg` roles path so Ansible can locate the agent role:
+
+```ini
+[defaults]
+roles_path = ./roles:./submodules/wazuh-ansible/roles/wazuh
+```
+
+Add the following to the relevant host or group vars (adjust the `address` if the agent host differs from the Wazuh server - `127.0.0.1` assumes the agent is being deployed to the same server):
+
+```yaml
+wazuh_managers:
+  - address: 127.0.0.1
+    port: 1514
+    protocol: tcp
+```
+
+Finally, deploy the `ansible-wazuh-agent` role to your target host -- once it finishes you should see the agent show as enrolled in the dashboard!
 
 ## Troubleshooting
 
