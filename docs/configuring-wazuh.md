@@ -184,7 +184,7 @@ wazuh_integrations:
     mode: "0750"
 ```
 
-**Step 2 — register the integration in `ossec.conf`** using `wazuh_manager_ossec_xml_replacements_custom` (the role's XPath-based `ossec.conf` customization mechanism — see [ossec.conf customization](#ossec-conf-customization) below):
+**Step 2 — register the integration in `ossec.conf`** using `wazuh_manager_ossec_xml_replacements_custom` (the role's XPath-based `ossec.conf` customization mechanism):
 
 ```yaml
 wazuh_manager_ossec_xml_replacements_custom:

@@ -31,6 +31,11 @@
       "automergeSchedule": ["* * 1-3 */6 *"]
     },
     {
+      "matchPackageNames": ["ansible", "ansible-core"],
+      "groupName": "ansible",
+      "groupSlug": "ansible"
+    },
+    {
       "matchDatasources": ["docker"],
       "matchPackageNames": [
         "wazuh/wazuh-manager",
