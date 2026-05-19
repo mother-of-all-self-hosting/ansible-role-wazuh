@@ -8,8 +8,8 @@
     src: "{{ item.src }}"
     dest: "{{ wazuh_data_path }}/manager/integrations/{{ item.name }}"
     mode: "{{ item.mode | default('0750') }}"
-    owner: "{{ wazuh_manager_uid }}"
-    group: "{{ wazuh_manager_gid }}"
+    owner: "{{ item.owner | default('root') }}"
+    group: "{{ item.group | default(wazuh_manager_gid) }}"
   with_items: "{{ wazuh_integrations }}"
   register: wazuh_integrations_result
 
