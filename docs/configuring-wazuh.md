@@ -170,19 +170,17 @@ See the [docs](https://documentation.wazuh.com/current/user-manual/reference/cen
 
 ## Custom integrations
 
-Copy integration scripts (e.g. Python or shell scripts) into the manager's integrations directory:
+Copy integration scripts into the manager's integrations directory:
 
 ```yaml
 wazuh_integrations:
-  - name: custom-slack
-    src: /path/on/controller/custom-slack
+  - name: custom-element
+    src: "{{ role_path }}/files/integrations/element/custom-element"
     mode: "0750"
-  - name: custom-slack.py
-    src: /path/on/controller/custom-slack.py
+  - name: custom-element.py
+    src: "{{ role_path }}/files/integrations/element/custom-element.py"
     mode: "0750"
 ```
-
-See `files/integrations/examples/` for example scripts to use as a starting point.
 
 ## ossec.conf customization
 
@@ -222,6 +220,9 @@ wazuh_managers:
     port: 1514
     protocol: tcp
 ```
+
+> [!TIP]
+> If you specified a `wazuh_enrollment_password` in your Wazuh server installation you can configure your agent to provide it via the `authd_pass` variable
 
 Finally, deploy the `ansible-wazuh-agent` role to your target host -- once it finishes you should see the agent show as enrolled in the dashboard!
 
