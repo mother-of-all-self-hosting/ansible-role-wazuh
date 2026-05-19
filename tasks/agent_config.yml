@@ -62,6 +62,6 @@
         devture_playbook_runtime_messages_list | default([])
         +
         [
-          "Note: Wazuh agent configuration or rules have changed. Restart the `wazuh-manager.service` systemd service to apply changes."
+          "Note: Wazuh agent configuration or rules have changed. Restart the `" ~ wazuh_manager_identifier ~ ".service` systemd service to apply changes."
         ]
       }}
