@@ -645,6 +645,8 @@ wazuh_rules: []
 # List of custom integrations to deploy to the manager's integrations directory.
 # Each item must have a `name` (destination filename) and `src` (path to the file on the controller).
 # `mode` is optional and defaults to "0750".
+# `owner` and `group` are optional and default to "root" and `wazuh_manager_gid` respectively.
+# NOTE: Wazuh's wazuh-integratord requires integration scripts to be owned by root with group wazuh.
 #
 # Example:
 # wazuh_integrations:
