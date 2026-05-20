@@ -475,16 +475,16 @@ wazuh_dashboard_container_labels_traefik_additional_response_headers_auto: |
 wazuh_dashboard_container_labels_traefik_additional_response_headers_custom: {}
 
 # wazuh_dashboard_container_labels_additional_labels contains a multiline string with additional labels to add to the container label file.
-# See `../templates/labels.j2` for details.
+# See `../templates/dashboard/labels.j2` for details.
 # To add your own custom labels, use `wazuh_dashboard_container_labels_additional_labels_custom`
 #
 # Example:
-# wazuh_dashboard_container_labels_additional_labels_custom:
-#   - my.label=1
-#   - another.label="here"
+# wazuh_dashboard_container_labels_additional_labels_custom: |
+#   my.label=1
+#   another.label="here"
 wazuh_dashboard_container_labels_additional_labels: "{{ wazuh_dashboard_container_labels_additional_labels_auto + wazuh_dashboard_container_labels_additional_labels_custom }}"
-wazuh_dashboard_container_labels_additional_labels_auto: []
-wazuh_dashboard_container_labels_additional_labels_custom: []
+wazuh_dashboard_container_labels_additional_labels_auto: ""
+wazuh_dashboard_container_labels_additional_labels_custom: ""
 
 # List of systemd services that the Wazuh dashboard systemd service depends on
 wazuh_dashboard_systemd_required_services_list: "{{ wazuh_dashboard_systemd_required_services_list_default + wazuh_dashboard_systemd_required_services_list_auto + wazuh_dashboard_systemd_required_services_list_custom }}"
