@@ -32,19 +32,24 @@
     # preconditions for the assertions further down, not evidence.
     ############################################################
 
-    - name: Wait for the Wazuh units to become active
-      ansible.builtin.systemd:
+    - name: Wait for the Wazuh systemd services to become active (up to 180s)
+      ansible.builtin.systemd_service:
         name: "{{ item }}.service"
       register: wazuh_molecule_units
       until: wazuh_molecule_units.status.ActiveState == 'active'
       retries: 36
       delay: 5
+      # So that giving up is reported by the assertion below rather than as a
+      # wall of systemd unit properties.
       failed_when: false
       loop:
         - wazuh-indexer
         - wazuh-manager
         - wazuh-dashboard
 
+    # `Restart=always` in the systemd unit means that even a container which crashes
+    # and gets restarted reads as active here, so this is a precondition rather than
+    # a result.
     - name: Assert the Wazuh units are active
       ansible.builtin.assert:
         that: "wazuh_molecule_units.results | rejectattr('status.ActiveState', 'equalto', 'active') | list | length == 0"
