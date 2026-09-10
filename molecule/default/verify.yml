@@ -16,6 +16,8 @@
     wazuh_molecule_dashboard_url: "http://127.0.0.1:5699"
 
   tasks:
+    - name: Verify that Wazuh works
+      block:
     # The role is not included in this playbook, so its defaults are not in
     # scope. Reading defaults/main.yml directly ties the version assertion
     # below.
@@ -464,3 +466,19 @@
           - "Wazuh indexer: {{ wazuh_defaults.wazuh_version }}, cluster {{ wazuh_molecule_cluster_health.json.status }}"
           - "Wazuh manager: {{ wazuh_molecule_manager_api_info.json.data.api_version }}, API authenticated"
           - "Wazuhdashboard: {{ wazuh_defaults.wazuh_version }}, HTTP {{ wazuh_molecule_dashboard_http.status }} on /app/login"
+
+      rescue:
+        # Whatever went wrong, the reason is almost always in the systemd service log.
+        - name: Retrieve the Wazuh systemd service log
+          ansible.builtin.command:
+            cmd: journalctl --no-pager --output=cat --unit=wazuh.service
+          register: wazuh_service_log
+          changed_when: false
+
+        - name: Show the Wazuh systemd service log
+          ansible.builtin.debug:
+            var: wazuh_service_log.stdout_lines
+
+        - name: Fail because verification did not pass
+          ansible.builtin.fail:
+            msg: "Wazuh verification failed. The systemd service log is printed above."
