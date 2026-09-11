@@ -15,6 +15,11 @@
     wazuh_molecule_manager_api_url: "https://127.0.0.1:55099"
     wazuh_molecule_dashboard_url: "http://127.0.0.1:5699"
 
+    wazuh_verify_units:
+      - wazuh-indexer.service
+      - wazuh-manager.service
+      - wazuh-dashboard.service
+
   tasks:
     - name: Verify that Wazuh works
       block:
@@ -34,31 +39,35 @@
         # preconditions for the assertions further down, not evidence.
         ############################################################
 
-        - name: Wait for the Wazuh systemd services to become active (up to 180s)
+        - name: Wait for the Wazuh systemd services to become active (up to 180s each)
           ansible.builtin.systemd_service:
-            name: "{{ item }}.service"
-          register: wazuh_molecule_units
-          until: wazuh_molecule_units.status.ActiveState == 'active'
+            name: "{{ item }}"
+          register: wazuh_services
+          until: wazuh_services.status.ActiveState == 'active'
           retries: 36
           delay: 5
+          loop: "{{ wazuh_verify_units }}"
           # So that giving up is reported by the assertion below rather than as a
           # wall of systemd unit properties.
           failed_when: false
-          loop:
-            - wazuh-indexer
-            - wazuh-manager
-            - wazuh-dashboard
 
         # `Restart=always` in the systemd unit means that even a container which crashes
         # and gets restarted reads as active here, so this is a precondition rather than
         # a result.
-        - name: Assert the Wazuh units are active
+        - name: Assert the Wazuh systemd services are active
           ansible.builtin.assert:
-            that: "wazuh_molecule_units.results | rejectattr('status.ActiveState', 'equalto', 'active') | list | length == 0"
+            that: wazuh_services.results | map(attribute='status.ActiveState') | unique | list == ['active']
             fail_msg: >-
-              Not every Wazuh unit is active:
-              {{ wazuh_molecule_units.results | map(attribute='status.ActiveState') | list }}
-            success_msg: "All three Wazuh units are active"
+              Not every service is active:
+              {{ dict(wazuh_verify_units | zip(wazuh_services.results | map(attribute='status.ActiveState'))) }}
+            success_msg: "Every systemd service is active"
+
+        - name: Retrieve the Wazuh systemd services log for debugging
+          when: wazuh_debug_service_enabled | bool
+          ansible.builtin.command:
+            cmd: "journalctl --no-pager --output=cat --unit={{ item }}"
+          changed_when: false
+          loop: "{{ wazuh_verify_units }}"
 
         - name: Wait for the Wazuh containers to report a health verdict
           ansible.builtin.command:
@@ -69,10 +78,7 @@
           delay: 10
           failed_when: false
           changed_when: false
-          loop:
-            - wazuh-indexer
-            - wazuh-manager
-            - wazuh-dashboard
+          loop: "{{ wazuh_verify_units }}"
 
         - name: Assert the Wazuh containers are healthy
           ansible.builtin.assert:
