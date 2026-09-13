@@ -1,5 +1,6 @@
 # SPDX-FileCopyrightText: 2026 Slavi Pantaleev
 # SPDX-FileCopyrightText: 2026 spatterlight
+# SPDX-FileCopyrightText: 2026 Suguru Hirahara
 #
 # SPDX-License-Identifier: AGPL-3.0-or-later
 
@@ -30,6 +31,9 @@ provisioner:
   inventory:
     group_vars:
       all:
+        # Helper variables
+        wazuh_restarts_check_enabled: true
+
         # Nearly every value below is deliberately different from the role's
         # own default, so that a value observed on the running stack can be
         # told apart from one the container image or the role default
