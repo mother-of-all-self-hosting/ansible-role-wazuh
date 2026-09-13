@@ -508,7 +508,7 @@
         - name: Show the Wazuh verification summary
           ansible.builtin.debug:
             msg:
-              - "Wazuh systemd: {% for unit, state in wazuh_verify_units | zip(wazuh_server_services.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
+              - "Wazuh systemd: {% for unit, state in wazuh_verify_units | zip(wazuh_verify_units.results | map(attribute='status.ActiveState')) %}{{ unit }} ({{ state }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "Wazuh server restarts: {% for unit, restarts in wazuh_verify_units | zip(wazuh_restarts_after.results | map(attribute='status.NRestarts')) %}{{ restarts }} ({{ unit }}){% if not loop.last %}, {% endif %}{% endfor %}"
               - "Wazuh indexer: {{ wazuh_defaults.wazuh_version }}, cluster {{ wazuh_molecule_cluster_health.json.status }}"
               - "Wazuh manager: {{ wazuh_molecule_manager_api_info.json.data.api_version }}, API authenticated"
