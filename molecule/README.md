@@ -69,8 +69,6 @@ Currently one testing scenario is available.
 
 The whole role: manager, indexer, dashboard and the certificate generator, with Traefik labels, agent enrollment, a remote agent configuration, a custom rule, custom integrations, additional volumes, extra container arguments and a custom `ossec.conf` XPath replacement.
 
-There used to be a second scenario, `features`, which configured the optional variables. Its `verify.yml` was byte-for-byte identical to `default`'s apart from two task names, so it asserted none of the features it configured; every one of them is now asserted here instead.
-
 Nearly every value the scenario sets differs from the role's own default, so that a value observed on the running stack can be told apart from one the container image or the role default produced.
 
 ## Running
