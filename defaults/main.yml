@@ -559,7 +559,7 @@ wazuh_certs_generator_identifier: "{{ wazuh_identifier }}-certs-generator"
 
 wazuh_certs_generator_container_image: "{{ wazuh_certs_generator_container_image_registry_prefix }}wazuh/wazuh-certs-generator:{{ wazuh_certs_generator_container_image_tag }}"
 # renovate: datasource=docker depName=wazuh/wazuh-certs-generator versioning=semver
-wazuh_certs_generator_container_image_tag: "0.0.4"
+wazuh_certs_generator_container_image_tag: "0.0.5"
 wazuh_certs_generator_container_image_registry_prefix: "{{ wazuh_certs_generator_container_image_registry_prefix_upstream }}"
 wazuh_certs_generator_container_image_registry_prefix_upstream: "{{ wazuh_certs_generator_container_image_registry_prefix_upstream_default }}"
 wazuh_certs_generator_container_image_registry_prefix_upstream_default: docker.io/
