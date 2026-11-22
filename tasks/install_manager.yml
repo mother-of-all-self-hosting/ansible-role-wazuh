@@ -32,6 +32,7 @@
     state: directory
     suffix: wazuh-manager
   changed_when: false
+  check_mode: false
   register: wazuh_manager_tempdir
 
 - name: Copy Wazuh manager default ossec.conf for customization
@@ -42,6 +43,7 @@
     owner: "{{ wazuh_manager_uid }}"
     group: "{{ wazuh_manager_gid }}"
   changed_when: false
+  check_mode: false
 
 # This is hacky work-around due to deal w/ the official Wazuh XML not being compatible with Python's lxml
 # TODO -> Find a better solution?
@@ -52,6 +54,7 @@
     insertbefore: "{{ item.insertbefore | default(omit) }}"
     insertafter: "{{ item.insertafter | default(omit) }}"
   changed_when: false
+  check_mode: false
   loop:
     - line: "<wazuh_root>"
       insertbefore: BOF
@@ -66,6 +69,7 @@
     state: "{{ item.state | default('present') }}"
     pretty_print: "{{ item.pretty_print | default(false) }}"
   changed_when: false
+  check_mode: false
   with_items: "{{ wazuh_manager_ossec_xml_replacements }}"
 
 - name: Remove temporary XML root wrapper from Wazuh manager config
@@ -74,6 +78,7 @@
     regexp: "^</?wazuh_root>\\s*$"
     state: absent
   changed_when: false
+  check_mode: false
 
 - name: Remove XML declaration added by lxml from Wazuh manager config
   ansible.builtin.lineinfile:
@@ -81,6 +86,7 @@
     regexp: "^<\\?xml"
     state: absent
   changed_when: false
+  check_mode: false
 
 - name: Ensure Wazuh manager ossec.conf is installed
   ansible.builtin.copy:
