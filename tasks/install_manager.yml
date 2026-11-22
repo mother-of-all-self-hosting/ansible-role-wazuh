@@ -98,6 +98,13 @@
     group: "{{ wazuh_manager_gid }}"
   register: wazuh_manager_config_result
 
+- name: Ensure Wazuh manager temporary configuration directory is removed
+  ansible.builtin.file:
+    path: "{{ wazuh_manager_tempdir.path }}"
+    state: absent
+  changed_when: false
+  check_mode: false
+
 - name: Ensure Wazuh manager environment file is installed
   ansible.builtin.template:
     src: "{{ role_path }}/templates/manager/env.j2"
